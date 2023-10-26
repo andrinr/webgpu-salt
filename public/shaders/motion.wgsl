@@ -24,6 +24,8 @@ struct Particles {
 @group(0) @binding(2) var<storage> dataIn: Particles;
 @group(0) @binding(3) var<storage, read_write> dataOut: Particles;
 
+const epsilon = 0.0001;
+
 fn particleIndex(id: vec2u) -> u32 {
   return (id.y % u32(constants.grid.y)) * u32(constants.grid.x) + (id.x % u32(constants.grid.x));
 }
@@ -37,17 +39,16 @@ fn kick_drift_kick(particle : Particle, acc : vec3<f32>) -> Particle {
 }
 
 fn gravity_force(particle : Particle, attractor : vec3<f32>) -> vec3<f32> {
-  let r = attractor - particle.pos;
-  let d = length(r) + 0.001;
+  let r = (attractor + vec3f(epsilon)) - particle.pos;
+  let d = length(r) + epsilon;
   return normalize(r) * (1.0 / (d)) * particle.mass;
 }
 
 fn rubber_force(particle : Particle, attractor : vec3<f32>) -> vec3<f32> {
-  let r = attractor - particle.pos;
-  let d = length(r) + 0.001;
-  return normalize(r) * d * d * particle.mass;
+  let r = (attractor + vec3f(epsilon)) - particle.pos;
+  let d = length(r) + epsilon;
+  return normalize(r) * d * d * d  * d * particle.mass;
 }
-
 
 // Make sure workgroup_size is equivalent to constant in main.ts
 @compute @workgroup_size(8, 8)
@@ -74,14 +75,11 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
     var current = dataIn.particles[i + j + 1u];
     let prev = dataIn.particles[i + j];
     let r = prev.pos - current.pos;
-    // dataOut.particles[i + j + 1u].pos = dataIn.particles[i + j + 1u].pos + r / 20.0;
-    // dataOut.particles[i + j + 1u].vel = normalize(r) * length(particle.vel) + 0.1 + 0.3 * dataIn.particles[i + j + 1u].vel;
-    // dataOut.particles[i + j + 1u].color = particle.color;
-    // dataOut.particles[i + j + 1u].mass = particle.mass;
+    current.pos += r / 15.0;
+    current.vel = normalize(r) * length(prev.vel);
     current.color = particle.color;
     current.mass = particle.mass;
-    let force = rubber_force(current, prev.pos) * (f32(j) / f32(sections));
-    dataOut.particles[i + j + 1u] = kick_drift_kick(current, force);
+    dataOut.particles[i + j + 1u] = current;
   }
 
 

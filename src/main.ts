@@ -5,9 +5,9 @@ import {genNoodle} from './noodle';
 
 const PARTICLE_WORKGROUP_SIZE : number = 8;
 const PARTICLE_GRID_SIZE : number = 16;
-const NOODLE_SECTIONS = 20;
-const NOODLE_ROTATIONAL_ELEMENTS = 36;
-const NOODLE_RADIUS = 0.02;
+const NOODLE_SECTIONS = 16;
+const NOODLE_ROTATIONAL_ELEMENTS = 16;
+const NOODLE_RADIUS = 0.03;
 
 const UPDATE_INTERVAL = 1000 / 60;
 const EYE_POS = vec3.fromValues(0, 0, -3);
@@ -220,7 +220,6 @@ const renderPipeline : GPURenderPipeline = device.createRenderPipeline({
     },
     primitive: {
         topology: 'triangle-list',
-        // No backface culling so that we can see the back of the cube.
         cullMode: 'back'
     },
 });

@@ -58,7 +58,12 @@ fn main(in : VertexInput) -> VertexOutput {
 
   let normal = normalize(cos(pointOnCircle * twoPi) * tangent + sin(pointOnCircle * twoPi) * bitangent);
 
-  let pos = particle.pos - normal * constants.noodle_radius * particle.mass * 10.;
+  // front and back thin middle thick
+  let thickness = 1. - abs(2. * uv.y - 1.);
+  // smoothed
+  let thickness_2 = 1. - abs(2. * uv.y - 1.) * abs(2. * uv.y - 1.);
+  
+  let pos = particle.pos - normal * constants.noodle_radius * particle.mass * 10. * thickness_2;
 
   var output: VertexOutput;
   output.pos = mvp * vec4<f32>(pos, 1.0);
