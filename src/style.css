@@ -1,0 +1,21 @@
+body {
+  background-color: black;
+  color: white
+}
+
+a {
+  color: white;
+  text-decoration: none;
+}
+
+a:visited {
+  color: wite;
+}
+
+canvas {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
