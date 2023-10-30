@@ -19,6 +19,7 @@ struct Constants {
   noodle_sections : f32,
   eye_pos : vec3f,
   noodle_rotational_elements : f32,
+  light_pos : vec3f,
   noodle_radius : f32,
 }
 
@@ -48,22 +49,25 @@ fn main(in : VertexInput) -> VertexOutput {
   let particleId = u32(in.instance_index * sections + in.vertex_index / elements);
   let particle = particles[particleId];
 
-  let frame = vec3f(particle.vel.z, 0, -particle.vel.x);
+  let frame = particle.color;
   let tangent = normalize(cross(particle.vel, frame));
   let bitangent = normalize(cross(particle.vel, tangent));
 
   let pointOnCircle = f32(in.vertex_index % elements) / f32(elements);
 
-  let uv = vec2(pointOnCircle, f32(section) / f32(sections));
+  let uv = vec2(pointOnCircle, f32(section) / f32(sections - 1));
 
   let normal = normalize(cos(pointOnCircle * twoPi) * tangent + sin(pointOnCircle * twoPi) * bitangent);
 
-  // front and back thin middle thick
-  let thickness = 1. - abs(2. * uv.y - 1.);
-  // smoothed
-  let thickness_2 = 1. - abs(2. * uv.y - 1.) * abs(2. * uv.y - 1.);
+  // quadratic function on uv.y where start and end are 0, between 0.25 and 0.75 it is 1
+  // uv.y range between 0 and 1
+  // make sure values for 0 and 1 are 0
+  let offset = 0.2;
+  let thickness = max(1. - 4. * (uv.y - offset - 0.25) * (uv.y + offset - 0.75), 0.1);
+  //let thickness = 1.0;
   
-  let pos = particle.pos - normal * constants.noodle_radius * particle.mass * 10. * thickness_2;
+  
+  let pos = particle.pos - normal * constants.noodle_radius * particle.mass * 10. * thickness;
 
   var output: VertexOutput;
   output.pos = mvp * vec4<f32>(pos, 1.0);

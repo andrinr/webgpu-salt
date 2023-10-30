@@ -1,16 +1,20 @@
 import './style.css'
-import { mat4, vec3 } from 'wgpu-matrix';
+import { mat4, vec3, vec2, Vec2 } from 'wgpu-matrix';
 import { loadCreateShaderModule } from './helpers';
 import {genNoodle} from './noodle';
 
 const PARTICLE_WORKGROUP_SIZE : number = 8;
-const PARTICLE_GRID_SIZE : number = 16;
-const NOODLE_SECTIONS = 16;
-const NOODLE_ROTATIONAL_ELEMENTS = 16;
-const NOODLE_RADIUS = 0.03;
+const PARTICLE_GRID_SIZE : number = 1;
+const NOODLE_SECTIONS = 128;
+const NOODLE_ROTATIONAL_ELEMENTS = 8;
+let NOODLE_RADIUS = 0.08;
+let DT = 0.01;
 
 const UPDATE_INTERVAL = 1000 / 60;
 const EYE_POS = vec3.fromValues(0, 0, -3);
+const LIGHT_POS = vec3.fromValues(3, -2, -2);
+
+const SHADOW_MAP_SIZE = 1024;
 
 const canvas : HTMLCanvasElement | null = document.getElementById("wgpu") as HTMLCanvasElement;
 if (!canvas) throw new Error("No canvas found.");
@@ -24,6 +28,25 @@ const resize = () => {
 }
 window.addEventListener("resize", resize);
 resize();
+
+let mousePos : Vec2 = vec2.fromValues(0, 0);
+window.addEventListener("click", (e) => {
+    mousePos = vec2.fromValues(e.clientX / window.innerWidth, e.clientY / window.innerHeight);
+    LIGHT_POS[0] = mousePos[0] * 2 - 1;
+    LIGHT_POS[1] = mousePos[1] * 2 - 1;
+    updateParams();
+    console.log(mousePos);
+});
+
+let bpm = 20;
+let lastSpacePress = Date.now();
+// recognise bpm with space bar presses
+let last_beat = Date.now();
+window.addEventListener("keydown", (e) => {
+    if (e.key === " ") {
+        NOODLE_RADIUS += 0.01;
+    }
+});
 
 // Setup
 if (!navigator.gpu) throw new Error("WebGPU not supported on this browser.");
@@ -42,13 +65,27 @@ canvasContext.configure({
 const params = new Float32Array([
     PARTICLE_GRID_SIZE,
     PARTICLE_GRID_SIZE,
-    0.01,
+    DT,
     NOODLE_SECTIONS,
     EYE_POS[0],
     EYE_POS[1],
     EYE_POS[2],
     NOODLE_ROTATIONAL_ELEMENTS,
+    LIGHT_POS[0],
+    LIGHT_POS[1],
+    LIGHT_POS[2],
     NOODLE_RADIUS]);
+
+const updateParams = () => {
+    params[2] = DT;
+    params[4] = EYE_POS[0];
+    params[5] = EYE_POS[1];
+    params[6] = EYE_POS[2];
+    params[8] = LIGHT_POS[0];
+    params[9] = LIGHT_POS[1];
+    params[10] = LIGHT_POS[2];
+    params[11] = NOODLE_RADIUS;
+}
 
 console.log(params);
 
@@ -147,7 +184,7 @@ const vertexBufferLayout : GPUVertexBufferLayout = {
 
 // Load & create shaders
 let vertexShader : GPUShaderModule =
-    await loadCreateShaderModule(device, "/shaders/vertex.wgsl", "Vertex shader");
+    await loadCreateShaderModule(device, "/shaders/vertex-render.wgsl", "Vertex shader");
 
 const fragmentShader : GPUShaderModule = 
     await loadCreateShaderModule(device, "/shaders/fragment.wgsl", "Fragment shader");
@@ -234,12 +271,37 @@ const motionPipeline = device.createComputePipeline({
 });
 
 let step = 0;
+
+
 function update() : void {
     step++;
 
-    console.log("Step " + step);
+    DT = 0.01;
+    updateParams();
+    // on 4/4 beat, change DT
+    let time = Date.now();
+    // bpm in ms 
+    let beats_per_ms = 60 / bpm * 1000;
+    NOODLE_RADIUS = 0.09 * (0.05 - NOODLE_RADIUS) + NOODLE_RADIUS;
+    updateParams();
+ 
+
+    // if ( time - last_beat > beats_per_ms || time - last_beat < 0.01) {
+    //     last_beat = time;
+    //     console.log("beat");
+    //     // set new random light position
+    //     LIGHT_POS[0] = (Math.random() * 2 - 1) * 0.5;
+    //     LIGHT_POS[1] = (Math.random() * 2 - 1) * 0.5;
+    //     // NOODLE_RADIUS = 0.05;
+    //     updateParams();
+    // }
+
+    console.log(DT);
+
     // update MVP
     device.queue.writeBuffer(mvpBuffer, 0, getMVP(aspect));
+    // update params
+    device.queue.writeBuffer(paramsBuffer, 0, params);
 
     const encoder : GPUCommandEncoder = device.createCommandEncoder();
 
