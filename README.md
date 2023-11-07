@@ -1,8 +1,9 @@
-# WebGPU Noodles
+# WebGPU Metal Noodles
 
-A whole bunch of noodles.
+A whole bunch of metal noodles.
 
-![Alt text](image.png)
+![Noodles](image.png)
+
 
 ## How to run
 

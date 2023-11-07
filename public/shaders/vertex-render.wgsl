@@ -64,9 +64,7 @@ fn main(in : VertexInput) -> VertexOutput {
   // make sure values for 0 and 1 are 0
   let offset = 0.2;
   let thickness = max(1. - 4. * (uv.y - offset - 0.25) * (uv.y + offset - 0.75), 0.1);
-  //let thickness = 1.0;
-  
-  
+
   let pos = particle.pos - normal * constants.noodle_radius * particle.mass * 10. * thickness;
 
   var output: VertexOutput;

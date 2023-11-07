@@ -63,7 +63,7 @@ fn main(input: FragInput) -> @location(0) vec4f {
   var normal = input.normal + 0.04 * noise;
 
   // add slight pattern to normal
-  normal += 0.3 * vec3f(sin(10*input.uv.x + 10 * input.pos.y), sin(10*input.uv.y + 10 * input.pos.x), cos(10*input.uv.x + 10 * input.pos.z));
+  normal += 0.1 * vec3f(sin(10*input.uv.x + 10 * input.pos.y), sin(10*input.uv.y + 10 * input.pos.x), cos(10*input.uv.x + 10 * input.pos.z));
 
   let light_dir = normalize(constants.light_pos - input.pos);
   let light_normal_angle = dot(normal, light_dir);
@@ -91,7 +91,6 @@ fn main(input: FragInput) -> @location(0) vec4f {
   color = mix(color, vec3f(0.), fog_factor);
 
   //color = color + 0.1 * (color * color);
-
   
   return vec4f(color, 1.0);
 }

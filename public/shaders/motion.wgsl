@@ -69,19 +69,12 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   
   var particle = dataIn.particles[i];
 
-  // for (var j = 1u; j < u32(constants.grid.x * constants.grid.y); j = j + 1u) {
-  //   let other = dataIn.particles[j * sections];
-
-  //   let d = min(length(particle.pos - other.pos) * 10.0, 1.0);
-  //   particle.vel = d * particle.vel + (1-d) * other.vel;
-  // }
-
   // secondary particle system
   for (var j = 0u; j < sections - 1u; j = j + 1u) {
     var current = dataIn.particles[i + j + 1u];
     let prev = dataIn.particles[i + j];
     let r = prev.pos - current.pos;
-    current.pos += r / 20.0;
+    current.pos += r / 15.0;
     current.vel = normalize(r) * length(prev.vel);
     current.color = particle.color;
     current.mass = particle.mass;
